@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo: Trig</title>
+
+    <style type="text/css">
+
+        canvas { float: left; background-color: #ddd; }
+        textarea { float: left; margin-left: 1em; }
+
+    </style>
+
+</head>
+<body>
+
+<canvas width="800" height="500"></canvas>
+
+<!-- textarea></textarea -->
+
+<script type="text/javascript">
+
+    var getHypoteneuse = function( p1, p2 )
+    {
+        var a = Math.abs( p2.y - p1.y ); // opp
+        var b = Math.abs( p2.x - p1.x ); // adj
+        var c = Math.sqrt( Math.pow( a, 2 ) + Math.pow( b, 2 ) );
+        return { a: a, b: b, c: c };
+    };
+
+
+
+    var canvas = document.getElementsByTagName( 'canvas' )[0];
+    var context = canvas.getContext( '2d' );
+
+    var p = { x: 50, y: 200 };
+    var points = [ // { x: 50,y: 350 },
+                    { x: 225, y: 50 },
+                    { x: 350, y: 300 }
+                    ];
+
+
+
+
+    // A is the red dot
+    var a = Math.abs( points[0].y - p.y ); // opp
+    var b = Math.abs( points[0].x - p.x ); // adj
+    var c = Math.sqrt( Math.pow( a, 2 ) + Math.pow( b, 2 ) );
+    // console.log( a, b, c );
+
+
+    var sin = b / c;
+    sin = Math.asin( sin );
+    // console.log( 'Angle:', ( sin * 180 / Math.PI ) );
+
+
+    // Altitude
+    var h = ( b / c ) * a;
+    var newX = h * Math.sin( Math.PI * 0.5 - sin );
+    var newY = h * Math.cos( Math.PI * 0.5 - sin );
+
+
+
+
+
+    context.strokeStyle = "#999";
+    context.beginPath();
+    context.moveTo( p.x, p.y );
+    context.lineTo( p.x, points[0].y );
+    context.lineTo( points[0].x, points[0].y );
+
+    // Altitude
+    context.moveTo( 50, 50 );
+    context.lineTo( 50 + newX, 50 + newY );
+
+    context.stroke();
+    context.closePath();
+
+
+
+
+
+
+    // DRAW POINTS
+    context.beginPath();
+    context.strokeStyle = "#ff0000";
+    context.moveTo( p.x, p.y );
+    context.lineTo( points[0].x, points[0].y );
+    context.lineTo( points[1].x, points[1].y );
+    context.lineTo( p.x, p.y );
+    context.stroke();
+    context.closePath();
+
+    context.beginPath();
+    context.strokeStyle = 'none';
+    context.fillStyle = 'red';
+    context.arc( p.x, p.y, 5, 0, Math.PI * 2 );
+    context.fill();
+    context.closePath();
+
+    context.beginPath();
+    context.fillStyle = 'blue';
+    context.arc( points[0].x, points[0].y, 5, 0, Math.PI * 2 );
+    context.fill();
+    context.closePath();
+
+
+
+
+
+
+
+    if ( true )
+    {
+        var pts = [
+            { x: 400, y: 350 },
+            { x: 500, y: 100 },
+            { x: 700, y: 350 }
+        ];
+
+
+
+
+        var a = getHypoteneuse( pts[0], pts[1] );
+        var b = getHypoteneuse( pts[1], pts[2] );
+        var c = getHypoteneuse( pts[2], pts[0] );
+        console.log( a, b, c );
+
+
+        var alpha,beta,theta;
+
+        alpha = Math.acos( ( Math.pow( b.c, 2 ) + Math.pow( c.c, 2 ) - Math.pow( a.c, 2 ) )
+                / ( 2 * b.c * c.c )
+        );
+
+        beta = Math.acos( ( Math.pow( a.c, 2 ) + Math.pow( c.c, 2 ) - Math.pow( b.c, 2 ) )
+                / ( 2 * a.c * c.c )
+        );
+
+        theta = Math.acos( ( Math.pow( a.c, 2 ) + Math.pow( b.c, 2 ) - Math.pow( c.c, 2 ) )
+                / ( 2 * a.c * c.c )
+        );
+
+
+
+        // console.log( alpha, beta, theta, ( alpha + beta + theta ) );
+        // console.log( ( alpha + beta + theta ) * 180 / Math.PI );
+        console.log( alpha * 180 / Math.PI );
+        console.log( beta * 180 / Math.PI );
+        console.log( theta * 180 / Math.PI );
+
+
+
+
+
+        context.fillStyle = 'none';
+        context.strokeStyle = 'grey';
+        context.beginPath();
+        context.moveTo( pts[2].x, pts[2].y );
+        for ( var i = 0; i < pts.length; i++ )
+        {
+            context.lineTo( pts[i].x, pts[i].y );
+        }
+        context.stroke();
+        context.closePath();
+
+
+        context.fillStyle = 'black';
+        context.beginPath();
+        context.font = "1em Arial";
+        context.fillText( 'A', pts[0].x - 20, pts[0].y + 10 );
+        context.fillText( 'C', pts[1].x - 10, pts[1].y - 10 );
+        context.fillText( 'B', pts[2].x + 10, pts[2].y + 10 );
+        context.fill();
+        context.closePath();
+
+    }
+
+
+
+
+
+
+
+    /**
+     * Random rotation
+     */
+
+    var a = getHypoteneuse( points[0], points[1] );
+    var b = getHypoteneuse( p, points[0] );
+    var c = getHypoteneuse( points[1], p );
+    // console.log( a, b, c );
+
+
+    var alpha = Math.acos( ( Math.pow( b.c, 2 ) + Math.pow( c.c, 2 ) - Math.pow( a.c, 2 ) )
+                            / ( 2 * b.c * c.c )
+                            );
+    // console.log( alpha );
+    // console.log( 'New angle:', alpha * 180 / Math.PI  );
+
+
+    var qwd = alpha * b.c;
+    // console.log( qwd );
+
+    var h = c.c * Math.sin( alpha );
+    // console.log( h );
+
+
+
+    // New altitude
+    context.fillStyle = 'none';
+    context.strokeStyle = 'green';
+    context.beginPath();
+    context.moveTo( p.x, p.y );
+    context.lineTo( p.y + newX, p.y + newY );
+    context.stroke();
+    context.closePath();
+
+
+
+
+
+
+    function moveHandler( e )
+    {
+        context.clearRect( 0, 0, canvas.width, canvas.height );
+
+        var p = { x: e.offsetX, y: e.offsetY };
+        console.log( p );
+        // var p =
+
+        context.beginPath();
+        context.strokeStyle = "#ff0000";
+
+        context.moveTo( p.x, p.y );
+        /*
+        for ( var i = 0; i < 3; i++ )
+        {
+            context.lineTo( points[i].x, points[i].y );
+        }
+        */
+        context.lineTo( points[0].x, points[0].y );
+        context.lineTo( points[1].x, points[1].y );
+        context.lineTo( p.x, p.y );
+        context.stroke();
+        context.closePath();
+    }
+
+
+
+
+</script>
+
+</body>
+</html>

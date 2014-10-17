@@ -1,0 +1,92 @@
+
+
+
+// GA actions
+
+Reset (num points)
+Control:
+    Draw
+    Delete
+    Grid (1,0)
+    Mode (1,0)
+Overlay | Share
+Overlay | About
+Load pattern (num points)
+
+
+
+// TODO
+
+- Add GA event tracking
+
+Later:
+- Update OpenGraph image with something a bit sexier
+- Change cursor to show "draw" and "delete" modes
+- Fullscreen option (and hide header/footer when doing so)
+- Github: Remove Syncretinal code, then add to repo, and build process for Syncretinal version
+- Add Twitter, Google+ and Facebook buttons to Share screen
+- Ability to save design as PNG (or SVG?)
+??? - Update URL dynamically (best support native Share features)
+- Convert icons to webfonts
+- Change instructions to indicate reset if page loads with coordinates in URI
+- Display help instructions first time page loads/resets
+- Convert code to class, move into /src
+- Add simple undo (Cmd-Z / Ctrl-Z)
+
+
+
+
+2014-10-13
+
+DONE - Allow line to be split on mousedown
+
+
+2013-06-22
+
+UPDATE!
+
+- Update draw/delete icons to match Photoshop pen tool (maybe a good idea, maybe not?)
+- Add keyDown handler to fix quirk with Ctrl-R
+- Move Draw/Delete icons out of the dropdown, for ease of use on mobile and general visibility
+
+
+213-06-13
+
+- Add dropdown for "Mode" menu item, create icons to indicate draw vs delete, clean up z-indexes
+
+
+2013-06-08
+
+- Add ability to Share using simple URI params
+
+
+June 6, 2013:
+
+- Style active point (and connected lines) when selected/being moved
+- Style end points (differently than active point) to indicate origin
+- Allow points to be deleted
+- Allow lines to be split
+- Add "draw" and "delete" modes
+- Move JS/CSS to separate files (or is it best practice to keep everything inline?)
+
+
+May 19, 2013:
+
+UPDATE!
+
+- Style buttons/icons a bit better
+- Added key handlers for Grid, Snap and Reset options
+- Added highlights for first/last end points when selected
+- Added ability to extend line from either end
+- Updated options CSS to wrap under the header based on media query, and cleaned up styles
+
+
+March 4, 2013:
+
+- Update copy, post for feedback
+
+
+Feb 23, 2013:
+
+- Finish version 1, launch site?
+
