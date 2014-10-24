@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Parabolic line designs</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" type="text/css" media="screen" href="css/parabolic_line_design.css" />
+        <style type="text/css" media="screen">
+
+            body { background-color: #000; color: #999; margin: 0; padding: 0; font-family: Arial, sans-serif; text-align: center; }
+
+            a { color: #5e98ff; }
+
+            header section { display: inline-block; border-radius: 0 0 0.5em 0.5em;
+                                background-color: rgba( 0, 0, 0, 0.75 ); box-shadow: 0 0 1em 0.5em rgba( 0, 0, 0, 0.75 ); }
+            header p { margin: 0.25em; padding: 0; }
+
+            canvas { position: absolute; top: 0; left: 0; background-color: #000; display: inline-block; z-index: -1; }
+
+        </style>
+
+    </head>
+    <body>
+
+        <header>
+            <section>
+                <h1>Parabolic line designs</h1>
+            </section>
+        </header>
+
+        <form name="settings">
+
+            <div class="mode">
+                <label class="half on" id="draw">
+                    <span><input type="radio" name="mode" value="draw" checked="checked" />Draw</span>
+                </label>
+                <label class="half" id="delete">
+                    <span><input type="radio" name="mode" value="delete" />Delete</span>
+                </label>
+            </div>
+
+            <ul id="settings">
+                <li>Settings</li>
+                <ul>
+                    <li><label><input type="checkbox" id="grid" /> <u>G</u>rid</label></li>
+                    <li><label><input type="checkbox" id="snap" /> <u>S</u>nap</label></li>
+                    <li><label id="reset"><u>R</u>eset</label></li>
+                </ul>
+            </ul>
+
+            <button id="about">?</button>
+            <button id="share">Share</button>
+
+        </form>
+
+        <div id="markers"></div>
+        <div id="stage">
+            <canvas width="200" height="200" class="layer" id="lines-grid"></canvas>
+            <canvas width="200" height="200" class="layer" id="lines"></canvas>
+            <canvas width="200" height="200" class="layer" id="debug"></canvas>
+        </div>
+
+        <div id="overlay">
+            <article>
+                <section id="aboutSection">
+                    <h2>About</h2>
+                    <p><strong>Drawing parabolic line designs is easy: connect three or more points with straight lines, then interpolate between those to form the rough outline of a <a href="http://en.wikipedia.org/wiki/Parabola">parabola</a>.</strong></p>
+                    <p>Lots of us made them in elementary school using a pencil, ruler, and graph paper. This nostalgia must be what's reminded me of them over the years, reworking a simple interactive demo each time.</p>
+                    <p>Since touch screens are a given on new phones, it was time to rewrite the old Flash version (itself reworked from an earlier Java applet) using JavaScript and Canvas, and add support for mobile. It was also a good opportunity to allow points to be dragged around, and add a snappy grid for more precise designs.</p>
+                    <p>That said, drawing <a href="http://www.google.com/search?hl=en&site=&q=parabolic+line+designs">parabolic line designs</a> the old-school way still does the job!</p>
+                </section>
+
+                <section id="shareSection">
+                    <h2>Share</h2>
+                    <p>Copy and paste the link below to share your design:</p>
+                    <p><textarea id="shareUrl" readonly="readonly" rows="2"></textarea></p>
+                </section>
+
+                <nav><a href="#close">Close<span>X</span></a></nav>
+            </article>
+        </div>
+
+
+        <div id="dialogue">
+            <ul id="tutorial-new">
+                <li>Tap anywhere to start</li>
+                <li>Tap again to draw a line</li>
+                <li>One more time to draw a parabola</li>
+                <li>Move the points around, or keep drawing!</li>
+            </ul>
+            <ul id="tutorial-share">
+                <li>Tap anywhere to draw a new point</li>
+                <li>Press and drag to move points</li>
+                <li>To reset, open Settings or press <u>r</u></li>
+            </ul>
+        </div>
+
+        <script src="js/vendor/modernizr-2.6.2.min.js"></script>
+        <script src="js/vendor/jquery-1.9.0.min.js"></script>
+        <script type="text/javascript" src="js/parabolic_line_designs.js"></script>
+
+    </body>
+</html>
