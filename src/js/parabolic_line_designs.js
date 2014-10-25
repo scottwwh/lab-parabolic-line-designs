@@ -6,13 +6,6 @@
  * To change this template use File | Settings | File Templates.
  */
 
-
-
-
-
-
-
-
 /**
  * PLD controls
  */
@@ -20,7 +13,6 @@
 var Controls = function()
 {
     var keysActive = {};
-
 
     this.init = function()
     {
@@ -99,7 +91,6 @@ var Controls = function()
         keysActive[ e.which ] = false;
     };
 
-
     this.onChangeSetting = function( e )
     {
         // console.log(e.currentTarget.id );
@@ -131,7 +122,6 @@ var Controls = function()
         return false;
     };
 
-
     this.toggleGrid = function()
     {
         app.grid = ! app.grid ;
@@ -161,7 +151,6 @@ var Controls = function()
             document.getElementById( 'snap' ).removeAttribute( 'checked' );
         }
     };
-
 
     this.changeMode = function( e )
     {
@@ -196,13 +185,7 @@ var Controls = function()
     };
 
 
-
-
-
-
-    /**
-     * Menus and navigation
-     */
+    /** MENU **/
 
     this.openOverlay = function( section )
     {
@@ -353,14 +336,14 @@ var ParabolicLineDesigns = function( debug )
 
 
         // Handlers
-        document.getElementById( 'stage' ).onmousedown = this.clickCanvas.bind(this);
+        document.getElementById( 'stage' ).onmousedown = this.touchCanvasHandler.bind(this);
         window.addEventListener( 'resize', this.resize.bind(this) );
-        window.addEventListener( 'mousemove', this.moveHandler.bind(this) );
-        window.addEventListener( 'touchmove', this.moveHandler.bind(this) );
+        window.addEventListener( 'mousemove', this.moveMarkerHandler.bind(this) );
+        window.addEventListener( 'touchmove', this.moveMarkerHandler.bind(this) );
 
 
         this.tutorial = new Tutorial();
-        this.tutorial.init( app.modeActivity );
+        this.tutorial.init( this.modeActivity );
         this.tutorial.next();
     };
 
@@ -406,17 +389,16 @@ var ParabolicLineDesigns = function( debug )
         }
     };
 
-
-
-
-
-
-
     this.reset = function()
     {
-        if ( confirm( strings.RESET ) ) this.clearAllPoints();
+        if ( confirm( strings.RESET ) )
+        {
+            this.points = [];
+            this.removeMarkers();
+            this.clearCanvas();
+        }
     };
-
+    
     this.resize = function()
     {
         var elems;
@@ -447,7 +429,7 @@ var ParabolicLineDesigns = function( debug )
 
     /** HANDLERS **/
 
-    this.clickCanvas = function( e )
+    this.touchCanvasHandler = function( e )
     {
         // console.log(e);
         e.preventDefault();
@@ -463,7 +445,7 @@ var ParabolicLineDesigns = function( debug )
             line = this.getCurrentLine( pTest );
 
         if ( this.snap )
-            p = this.snapPoint( p );
+            p = this.snapPointToGrid( p );
 
         newMarker = this.addPoint( p, line );
 
@@ -471,14 +453,351 @@ var ParabolicLineDesigns = function( debug )
         this.drawAllPoints();
 
         // Start drag if possible
-        this.touchStart( newMarker );
+        this.touchMarker( newMarker );
 
         // console.log( this, this.tutorial );
         this.tutorial.next();
     };
 
+    this.touchStartHandler = function( e )
+    {
+        e.preventDefault();
+
+        this.touchMarker( e.currentTarget );
+    };
+
+    this.touchEndHandler = function( e )
+    {
+        e.preventDefault();
+
+        this.currentPoint = null;
+        this.moving = false;
+
+        this.clearCanvas();
+        this.drawAllPoints();
+    };
+    
+    this.moveMarkerHandler = function( e )
+    {
+        if ( this.moving )
+        {
+            this.moveMarker( e );
+            return;
+        }
+        else
+        {
+            var p = { x: e.pageX, y: e. pageY };
+        }
+
+        if ( this.points.length > 1 )
+        {
+            if ( this.isTouchingLine( p ) && this.modePen == strings.DRAW )
+            {
+                document.body.style.cursor = "pointer";
+            }
+            else
+            {
+                document.body.style.cursor = "default";
+            }
+        }
+        // Zany trig solving
+        else if ( this.points.length > 1 )
+        {
+            this.debugContext.clearRect( 0, 0, this.debugCanvas.width, this.debugCanvas.height );
+
+            for ( var i = 0; i < this.points.length - 1; i++ )
+            {
+                var x1 = this.points[ i ].x + this.origin.x;
+                var x2 = this.points[ i + 1 ].x + this.origin.x;
+
+                var y1 = this.points[ i ].y + this.origin.y;
+                var y2 = this.points[ i + 1 ].y + this.origin.y;
+
+                var inBoundsX = false;
+                var inBoundsY = false;
+
+                if ( x1 < x2 )
+                {
+                    if ( p.x > x1 && p.x < x2 ) inBoundsX = true;
+                }
+                else
+                {
+                    if ( p.x < x1 && p.x > x2 ) inBoundsX = true;
+                }
+
+                if ( y1 < y2 )
+                {
+                    if ( p.y > y1 && p.y < y2 ) inBoundsY = true;
+                }
+                else
+                {
+                    if ( p.y < y1 && p.y > y2 ) inBoundsY = true;
+                }
 
 
+                if ( inBoundsX && inBoundsY )
+                {
+                    console.log( 'oui!' );
+                    this.debugContext.beginPath();
+                    this.debugContext.fillStyle = 'rgba( 0, 255, 0, 0.2 )';
+                    this.debugContext.rect( x1, y1, x2 - x1, y2 - y1 );
+                    this.debugContext.fill();
+                    this.debugContext.closePath();
+
+                    this.debugContext.beginPath();
+                    this.debugContext.fillStyle = 'none';
+                    this.debugContext.strokeStyle = '#fff';
+
+                    this.debugContext.moveTo( x1, y1 );
+                    this.debugContext.lineTo( p.x, p.y );
+                    this.debugContext.lineTo( x2, y2 );
+                    this.debugContext.lineTo( x1, y1 );
+                    this.debugContext.stroke();
+
+                    this.debugContext.closePath();
+                }
+            }
+        }
+    };
+
+
+    /** GETTERS AND SETTERS **/
+
+    this.getShareUrl = function()
+    {
+        var url = document.location.href;
+        if ( url.indexOf( '#' ) > -1 ) url = url.substr( 0, url.indexOf( '#' ) );
+
+        if ( this.points.length > 0 )
+        {
+            var arr = [];
+            for ( var i = 0; i < this.points.length; i++ )
+            {
+                arr.push( this.points[i].x + ',' + this.points[i].y );
+            }
+            url += '#v=1&p=' + arr.join( '|' );
+        }
+        return url;
+    };
+
+
+    /** MARKERS **/
+
+    this.addMarker = function( pt, pos )
+    {
+        pos = ( typeof pos === 'undefined' ) ? this.endPoint : pos ;
+
+        var div = document.createElement( 'div' );
+        div.className = 'marker';
+        div.setAttribute( 'data', pos );
+        div.style.top = pt.y + this.origin.y + 'px';
+        div.style.left = pt.x + this.origin.x + 'px';
+
+        div.addEventListener( 'mousedown', this.touchStartHandler.bind(this) );
+        div.addEventListener( 'touchstart', this.touchStartHandler.bind(this) );
+
+        div.addEventListener( 'mouseup', this.touchEndHandler.bind(this) );
+        div.addEventListener( 'touchend', this.touchEndHandler.bind(this) );
+
+        // Prepend
+        if ( pos == 0 )
+        {
+            document.getElementById( 'markers' ).insertBefore( div, document.getElementById( 'markers' ).firstChild );
+        }
+        // Append
+        else if ( pos == this.points.length - 1 )
+        {
+            document.getElementById( 'markers' ).appendChild( div );
+        }
+        // Split line
+        else
+        {
+            document.getElementById( 'markers' ).insertBefore( div, document.getElementById( 'markers' ).childNodes[ pos ] );
+        }
+
+        return div;
+    };
+
+    this.indexMarkers = function()
+    {
+        $( '.marker' ).each(
+            function( i, e )
+            {
+                e.setAttribute( 'data', i );
+            }
+        )
+    };
+
+    this.removeMarkers = function()
+    {
+        $( '.marker' ).each(
+            function( i, e )
+            {
+                document.getElementById( 'markers' ).removeChild( e );
+            }
+        )
+    };
+
+    this.removeMarker = function( num )
+    {
+        document.getElementById( 'markers' ).removeChild( document.getElementById( 'markers' ).children[ num ] );
+    };
+
+    this.touchMarker = function( elem )
+    {
+        var id = parseInt( elem.getAttribute( 'data' ), 10 );
+
+        if ( this.modePen == strings.DELETE )
+        {
+            // console.log( id );
+            this.points.splice( id, 1 );
+            this.removeMarker( id );
+            this.indexMarkers();
+
+            this.endPoint = ( this.endPoint == 0 ) ? 0 : this.points.length - 1 ;
+
+            this.clearCanvas();
+            this.drawAllPoints();
+        }
+        else
+        {
+            this.movingDiv = elem;
+            this.moving = true;
+
+            this.currentPoint = id;
+
+            // Update active point if applicable
+            if ( this.endPoint != id
+                && ( id == 0 || id == this.points.length - 1 )
+                )
+            {
+                this.endPoint = id;
+            }
+
+            this.clearCanvas();
+            this.drawAllPoints();
+        }
+    };
+
+    this.moveMarker = function( e )
+    {
+        e.preventDefault();
+
+        var p = { x: e.pageX - this.origin.x, y: e. pageY - this.origin.y };
+
+        if ( e.type == 'touchmove' )
+        {
+            p.x = e.touches[ 0 ].pageX - this.origin.x;
+            p.y = e.touches[ 0 ].pageY - this.origin.y;
+        }
+
+        if ( this.snap ) p = this.snapPointToGrid( p );
+
+        this.movingDiv.style.top = p.y + this.origin.y + 'px';
+        this.movingDiv.style.left = p.x + this.origin.x + 'px';
+
+        // Update point
+        this.points[ this.movingDiv.getAttribute( 'data' ) ] = p;
+
+        this.clearCanvas();
+        this.drawAllPoints();
+    };
+
+
+    /** LINES **/
+
+    // Get the CanvasPixelArray from the given coordinates and dimensions.
+    this.getCurrentLine = function( p )
+    {
+        var imgd = this.debugContext.getImageData( p.x, p.y, 1, 1 );
+        // console.log( imgd.data );
+
+        return imgd.data[ 0 ];
+    };
+
+    this.isTouchingLine = function( p )
+    {
+        // console.log( p );
+        var imgd = this.debugContext.getImageData( p.x, p.y, 1, 1 );
+        return ( imgd.data[0] > 0 );
+    };
+
+
+    /** POINTS **/
+
+    this.snapPointToGrid = function( p )
+    {
+        var realX = Math.abs( p.x );
+        var diffX = realX % this.spacing;
+        if ( Math.abs( diffX ) < this.spacing * 0.5 )
+        {
+            realX -= diffX;
+        }
+        else
+        {
+            realX += this.spacing - diffX;
+        }
+        p.x = ( p.x < 0 ) ? realX * -1 : realX ;
+
+
+        var realY = Math.abs( p.y );
+        var diffY = realY % this.spacing;
+        if ( Math.abs( diffY ) < this.spacing * 0.5 )
+        {
+            realY -= diffY;
+        }
+        else
+        {
+            realY += this.spacing - diffY;
+        }
+        p.y = ( p.y < 0 ) ? realY * -1 : realY ;
+
+
+        return p;
+    };
+
+    this.addPoint = function( p, pos )
+    {
+        // Break line in two
+        if ( typeof pos != 'undefined' )
+        {
+            this.points.splice( pos, 0, p );
+            this.endPoint = ( this.endPoint == 0 ) ? 0 : this.points.length - 1;
+        }
+        else
+        {
+            if ( this.endPoint == 0 )
+            {
+                // Prepend
+                this.points.unshift( p );
+            }
+            else
+            {
+                // Append
+                this.points.push( p );
+                this.endPoint = this.points.length - 1;
+            }
+
+            pos = this.endPoint;
+        }
+
+        var marker = this.addMarker( p, pos );
+        this.indexMarkers();
+
+        // Return marker for handling if necessary
+        return marker;
+    };
+
+    this.drawAllPoints = function()
+    {
+        for ( var i = 0; i < this.points.length; i++ )
+        {
+            this.drawPoint( i );
+        }
+    };
+
+
+    /** RENDERER **/
 
     this.clearCanvas = function()
     {
@@ -494,10 +813,6 @@ var ParabolicLineDesigns = function( debug )
             this.debugCanvas.width = this.debugCanvas.width;
         }
     };
-
-
-
-    /** DRAWING OPS **/
 
     // Cache graphics for point states
     this.drawPointStates = function()
@@ -617,413 +932,6 @@ var ParabolicLineDesigns = function( debug )
         context.drawImage(gradientCanvas,0,0,gradientCanvas.width,gradientCanvas.height,0,0,gridCanvas.width,gridCanvas.height);
     };
 
-
-
-
-
-
-    this.getShareUrl = function()
-    {
-        var url = document.location.href;
-        if ( url.indexOf( '#' ) > -1 ) url = url.substr( 0, url.indexOf( '#' ) );
-
-        if ( this.points.length > 0 )
-        {
-            var arr = [];
-            for ( var i = 0; i < this.points.length; i++ )
-            {
-                arr.push( this.points[i].x + ',' + this.points[i].y );
-            }
-            url += '#v=1&p=' + arr.join( '|' );
-        }
-        return url;
-    };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    this.addMarker = function( pt, prepend )
-    {
-        id = ( prepend ) ? 0 : this.points.length - 1 ;
-
-        var div = document.createElement( 'div' );
-        div.className = 'marker';
-        div.setAttribute( 'data', id );
-        div.style.top = pt.y + this.origin.y + 'px';
-        div.style.left = pt.x + this.origin.x + 'px';
-
-        div.addEventListener( 'mousedown', this.touchStartHandler.bind(this) );
-        div.addEventListener( 'touchstart', this.touchStartHandler.bind(this) );
-
-        div.addEventListener( 'mouseup', this.touchEnd.bind(this) );
-        div.addEventListener( 'touchend', this.touchEnd.bind(this) );
-
-        if ( prepend )
-        {
-            document.getElementById( 'markers' ).insertBefore( div, document.getElementById( 'markers' ).firstChild );
-        }
-        else
-        {
-            document.getElementById( 'markers' ).appendChild( div );
-        }
-
-        return div;
-    };
-
-    this.insertMarkerAt = function( pt, pos )
-    {
-        var div = document.createElement( 'div' );
-        div.className = 'marker';
-        div.setAttribute( 'data', pos );
-        div.style.top = pt.y + this.origin.y + 'px';
-        div.style.left = pt.x + this.origin.x + 'px';
-
-        div.addEventListener( 'mousedown', this.touchStartHandler.bind(this) );
-        div.addEventListener( 'touchstart', this.touchStartHandler.bind(this) );
-
-        div.addEventListener( 'mouseup', this.touchEnd.bind(this) );
-        div.addEventListener( 'touchend', this.touchEnd.bind(this) );
-
-        // console.log( pos, div );
-        document.getElementById( 'markers' ).insertBefore( div, document.getElementById( 'markers' ).childNodes[ pos ] );
-
-        return div;
-    };
-
-    this.indexMarkers = function()
-    {
-        $( '.marker' ).each(
-            function( i, e )
-            {
-                e.setAttribute( 'data', i );
-            }
-        )
-    };
-
-    this.removeMarkers = function()
-    {
-        $( '.marker' ).each(
-            function( i, e )
-            {
-                document.getElementById( 'markers' ).removeChild( e );
-            }
-        )
-    };
-
-    this.removeMarker = function( num )
-    {
-        document.getElementById( 'markers' ).removeChild( document.getElementById( 'markers' ).children[ num ] );
-    };
-
-
-    /**
-     * Events
-     */
-
-    this.touchStartHandler = function( e )
-    {
-        e.preventDefault();
-
-        this.touchStart( e.currentTarget );
-    };
-
-    this.touchStart = function( elem )
-    {
-        // e.preventDefault();
-
-        var id = parseInt( elem.getAttribute( 'data' ), 10 );
-        // console.log( elem, id );
-
-        if ( this.modePen == strings.DELETE )
-        {
-            // console.log( id );
-            this.points.splice( id, 1 );
-            this.removeMarker( id );
-            this.indexMarkers();
-
-            this.endPoint = ( this.endPoint == 0 ) ? 0 : this.points.length - 1 ;
-
-            this.clearCanvas();
-            this.drawAllPoints();
-        }
-        else
-        {
-            this.movingDiv = elem;
-            this.moving = true;
-
-            this.currentPoint = id;
-
-            // Update active point if applicable
-            if ( this.endPoint != id
-                && ( id == 0 || id == this.points.length - 1 )
-                )
-            {
-                this.endPoint = id;
-            }
-
-            this.clearCanvas();
-            this.drawAllPoints();
-        }
-    };
-
-    this.touchEnd = function( e )
-    {
-        e.preventDefault();
-
-        this.currentPoint = null;
-        this.moving = false;
-
-        this.clearCanvas();
-        this.drawAllPoints();
-    };
-
-
-    // Get the CanvasPixelArray from the given coordinates and dimensions.
-    this.getCurrentLine = function( p )
-    {
-        var imgd = this.debugContext.getImageData( p.x, p.y, 1, 1 );
-        // console.log( imgd.data );
-
-        return imgd.data[ 0 ];
-    };
-
-    this.isTouchingLine = function( p )
-    {
-        // console.log( p );
-        var imgd = this.debugContext.getImageData( p.x, p.y, 1, 1 );
-        return ( imgd.data[0] > 0 );
-    };
-
-
-    this.moveHandler = function( e )
-    {
-        if ( this.moving )
-        {
-            this.moveMarker( e );
-            return;
-        }
-        else
-        {
-            var p = { x: e.pageX, y: e. pageY };
-        }
-
-        if ( this.points.length > 1
-        // && false
-            )
-        {
-            if ( this.isTouchingLine( p ) && this.modePen == strings.DRAW )
-            {
-                document.body.style.cursor = "pointer";
-            }
-            else
-            {
-                document.body.style.cursor = "default";
-            }
-        }
-        // Zany trig solving
-        else if ( this.points.length > 1 )
-        {
-            this.debugContext.clearRect( 0, 0, this.debugCanvas.width, this.debugCanvas.height );
-
-            for ( var i = 0; i < this.points.length - 1; i++ )
-            {
-                var x1 = this.points[ i ].x + this.origin.x;
-                var x2 = this.points[ i + 1 ].x + this.origin.x;
-
-                var y1 = this.points[ i ].y + this.origin.y;
-                var y2 = this.points[ i + 1 ].y + this.origin.y;
-
-                var inBoundsX = false;
-                var inBoundsY = false;
-
-                if ( x1 < x2 )
-                {
-                    if ( p.x > x1 && p.x < x2 ) inBoundsX = true;
-                }
-                else
-                {
-                    if ( p.x < x1 && p.x > x2 ) inBoundsX = true;
-                }
-
-                if ( y1 < y2 )
-                {
-                    if ( p.y > y1 && p.y < y2 ) inBoundsY = true;
-                }
-                else
-                {
-                    if ( p.y < y1 && p.y > y2 ) inBoundsY = true;
-                }
-
-
-                if ( inBoundsX && inBoundsY )
-                {
-                    console.log( 'oui!' );
-                    this.debugContext.beginPath();
-                    this.debugContext.fillStyle = 'rgba( 0, 255, 0, 0.2 )';
-                    this.debugContext.rect( x1, y1, x2 - x1, y2 - y1 );
-                    this.debugContext.fill();
-                    this.debugContext.closePath();
-
-                    this.debugContext.beginPath();
-                    this.debugContext.fillStyle = 'none';
-                    this.debugContext.strokeStyle = '#fff';
-
-                    this.debugContext.moveTo( x1, y1 );
-                    this.debugContext.lineTo( p.x, p.y );
-                    this.debugContext.lineTo( x2, y2 );
-                    this.debugContext.lineTo( x1, y1 );
-                    this.debugContext.stroke();
-
-                    this.debugContext.closePath();
-                }
-            }
-        }
-    };
-
-    this.moveMarker = function( e )
-    {
-        e.preventDefault();
-
-        var p = { x: e.pageX - this.origin.x, y: e. pageY - this.origin.y };
-
-        if ( e.type == 'touchmove' )
-        {
-            p.x = e.touches[ 0 ].pageX - this.origin.x;
-            p.y = e.touches[ 0 ].pageY - this.origin.y;
-        }
-
-        if ( this.snap ) p = this.snapPoint( p );
-
-        this.movingDiv.style.top = p.y + this.origin.y + 'px';
-        this.movingDiv.style.left = p.x + this.origin.x + 'px';
-
-        // Update point
-        this.points[ this.movingDiv.getAttribute( 'data' ) ] = p;
-
-        this.clearCanvas();
-        this.drawAllPoints();
-    };
-
-
-
-
-
-
-
-
-
-
-
-    this.snapPoint = function( p )
-    {
-        var realX = Math.abs( p.x );
-        var diffX = realX % this.spacing;
-        if ( Math.abs( diffX ) < this.spacing * 0.5 )
-        {
-            realX -= diffX;
-        }
-        else
-        {
-            realX += this.spacing - diffX;
-        }
-        p.x = ( p.x < 0 ) ? realX * -1 : realX ;
-
-
-        var realY = Math.abs( p.y );
-        var diffY = realY % this.spacing;
-        if ( Math.abs( diffY ) < this.spacing * 0.5 )
-        {
-            realY -= diffY;
-        }
-        else
-        {
-            realY += this.spacing - diffY;
-        }
-        p.y = ( p.y < 0 ) ? realY * -1 : realY ;
-
-
-        return p;
-    };
-
-
-    this.addPoint = function( p, pos )
-    {
-        var newMarker;
-
-        // Break line in two
-        if ( typeof pos != 'undefined' )
-        {
-            this.points.splice( pos, 0, p );
-            this.endPoint = ( this.endPoint == 0 ) ? 0 : this.points.length - 1;
-            newMarker = this.insertMarkerAt( p, pos );
-            this.indexMarkers();
-        }
-        else if ( this.endPoint == 0
-            && this.points.length > 1
-            )
-        {
-            // Prepend point to line
-            this.points.unshift( p );
-            newMarker = this.addMarker( p, true );
-            this.indexMarkers();
-        }
-        else
-        {
-            // Add new point to the end
-            this.points.push( p );
-            this.endPoint = this.points.length - 1;
-            newMarker = this.addMarker( p );
-        }
-
-        // Return marker for handling if necessary
-        return newMarker;
-    };
-
-    this.clearAllPoints = function()
-    {
-        this.points = [];
-        this.removeMarkers();
-        this.clearCanvas();
-
-        return false;
-    };
-
-
-    this.drawAllPoints = function()
-    {
-        for ( var i = 0; i < this.points.length; i++ )
-        {
-            this.drawPoint( i );
-        }
-    };
-
     this.drawPoint = function( num )
     {
         var x = this.points[ num ].x;
@@ -1078,8 +986,8 @@ var ParabolicLineDesigns = function( debug )
             if ( num == this.currentPoint )
             {
                 var grad = this.linesContext.createLinearGradient( pt1.x + this.origin.x, pt1.y + this.origin.y,
-                                                            x + this.origin.x, y + this.origin.y
-                                                            );
+                    x + this.origin.x, y + this.origin.y
+                );
                 grad.addColorStop( 1, "white" );
                 grad.addColorStop( 0, "gold" );
                 this.linesContext.strokeStyle = grad;
@@ -1120,21 +1028,6 @@ var ParabolicLineDesigns = function( debug )
             this.debugContext.closePath();
         }
     };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
