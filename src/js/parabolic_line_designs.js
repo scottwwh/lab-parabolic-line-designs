@@ -19,27 +19,27 @@ var Controls = function()
         window.onkeydown = this.onKeyDown.bind(this);
         window.onkeyup = this.onKeyUp.bind(this);
 
-        $( '#grid' ).attr( 'checked', 'checked' );
-        $( '#grid' ).change( this.onChangeSetting.bind(this) );
-        $( '#snap' ).change( this.onChangeSetting.bind(this) );
-        $( '#reset' ).click( this.onChangeSetting.bind(this) );
+        // Update to reflect default state
+        document.getElementById( 'grid' ).checked = app.grid;
 
+        // Controls
+        document.querySelector( '#settings li' ).onclick = this.toggleSettings;
+        document.getElementById( 'grid' ).onchange = this.onChangeSetting.bind(this);
+        document.getElementById( 'snap' ).onchange = this.onChangeSetting.bind(this);
 
+        document.getElementById( 'reset' ).onclick = this.onChangeSetting.bind(this);
+        document.getElementById( 'mode' ).onclick = this.onChangeSetting.bind(this);
         document.getElementById( 'draw' ).onclick = this.onChangeSetting.bind(this);
         document.getElementById( 'delete' ).onclick = this.onChangeSetting.bind(this);
+        document.getElementById( 'share' ).onclick = this.onChangeSetting.bind(this);
+        document.getElementById( 'about' ).onclick = this.onChangeSetting.bind(this);
 
-
-        $( '#share' ).click( this.onChangeSetting.bind(this) );
-        $( '#about' ).click( this.onChangeSetting.bind(this) );
-        $( 'a[href="#close"]' ).click( this.closeOverlay );
-
-        $( '#overlay' ).click( this.closeOverlay );
-        $( '#overlay article' ).click( function( e ) { e.stopImmediatePropagation(); } );
+        // Overlay
+        document.querySelector( 'a[href="#close"]' ).onclick = this.closeOverlay.bind(this);
+        document.getElementById( 'overlay' ).onclick = this.closeOverlay;
+        document.querySelector( '#overlay article' ).onclick = function( e ) { e.stopImmediatePropagation(); };
 
         document.getElementById( 'shareUrl' ).onclick = function( e ) { e.currentTarget.select(); };
-        document.querySelector( '#settings li' ).onclick = function(e) {
-            $( '#settings ul' ).toggle();
-        };
     };
 
     this.onKeyDown = function( e )
@@ -49,43 +49,39 @@ var Controls = function()
 
     this.onKeyUp = function( e )
     {
-        // console.log( e.which );
+        if ( typeof keysActive[ e.which ] === 'undefined' )
+            return;
 
-        switch( e.which )
+        if ( e.which == 27 ) // Esc
         {
-            // esc = close overlay
-            case 27:
-                this.closeOverlay();
-                break;
+            this.closeOverlay();
+        }
+        else
+        {
+            var char = String.fromCharCode( e.which );
+            switch( char )
+            {
+                case 'G':
+                    this.toggleGrid();
+                    break;
 
-            // g = grid
-            case 71:
-                this.toggleGrid();
-                break;
+                case 'S':
+                    this.toggleSnap();
+                    break;
 
-            // s = snap
-            case 83:
-                this.toggleSnap();
-                break;
+                case 'M':
+                    this.changeMode();
+                    break;
 
-            // m = modePen
-            case 77:
-                this.changeMode();
-                break;
+                case 'R':
+                    if ( ! keysActive[ 17 ] ) // Ctrl-R
+                        app.reset();
+                    break;
 
-            // r = reset
-            case 82:
-                if ( ! keysActive[ 17 ] // Ctrl
-                    && keysActive[ 82 ]
-                    )
-                {
-                    app.reset();
-                }
-                break;
-
-            default:
-                // console.log(e.which);
-                break;
+                default:
+                    // console.log( 'No action assigned to', char );
+                    break;
+            }
         }
 
         keysActive[ e.which ] = false;
@@ -93,7 +89,6 @@ var Controls = function()
 
     this.onChangeSetting = function( e )
     {
-        // console.log(e.currentTarget.id );
         switch( e.currentTarget.id )
         {
             case 'grid':
@@ -113,6 +108,10 @@ var Controls = function()
                 this.openOverlay( e.currentTarget.id );
                 break;
 
+            case 'mode':
+                this.toggleMode();
+                break;
+
             case 'draw':
             case 'delete':
                 this.changeMode( e );
@@ -122,34 +121,34 @@ var Controls = function()
         return false;
     };
 
+    this.toggleSettings = function()
+    {
+        var el = document.querySelector( '#settings ul' );
+        el.style.display = ( el.style.display == 'block' ) ? 'none' : 'block' ;
+    };
+
     this.toggleGrid = function()
     {
         app.grid = ! app.grid ;
 
-        if ( app.grid )
-        {
-            document.getElementById( 'grid' ).setAttribute( 'checked', 'checked' );
-            document.getElementById("lines-grid").style.visibility = 'visible';
-        }
-        else
-        {
-            document.getElementById( 'grid' ).removeAttribute( 'checked' );
-            document.getElementById("lines-grid").style.visibility = 'hidden';
-        }
+        var visibility = ( app.grid ) ? 'visible' : 'hidden' ;
+        document.getElementById("lines-grid").style.visibility = visibility;
+
+        document.getElementById( 'grid' ).checked = app.grid;
     };
 
     this.toggleSnap = function()
     {
         app.snap = ! app.snap ;
 
-        if ( app.snap )
-        {
-            document.getElementById( 'snap' ).setAttribute( 'checked', 'checked' );
-        }
-        else
-        {
-            document.getElementById( 'snap' ).removeAttribute( 'checked' );
-        }
+        document.getElementById( 'snap' ).checked = app.snap;
+    };
+
+    this.toggleMode = function()
+    {
+        app.modePen = ( app.modePen == strings.DRAW ) ? strings.DELETE : strings.DRAW ;
+
+        this.updatePenIcons();
     };
 
     this.changeMode = function( e )
@@ -165,9 +164,14 @@ var Controls = function()
         }
         else
         {
-            app.modePen = ( app.modePen == strings.DRAW ) ? strings.DELETE : strings.DRAW ;
+            this.toggleMode();
         }
 
+        this.updatePenIcons();
+    };
+
+    this.updatePenIcons = function()
+    {
         var elems = document.getElementsByName( 'mode' );
         for ( var i = 0; i < elems.length; i++ )
         {
@@ -219,37 +223,6 @@ var Controls = function()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var strings = {};
 strings.RESET               = "Clear all points and start over?";
 strings.DRAW                = "draw";
@@ -262,7 +235,7 @@ strings.ACTVITY_RETURNING   = 'activityReturning';
 
 
 /**
- * PLD app
+ * Parabolic Line Designs app
  */
 
 var ParabolicLineDesigns = function( debug )
@@ -620,22 +593,20 @@ var ParabolicLineDesigns = function( debug )
 
     this.indexMarkers = function()
     {
-        $( '.marker' ).each(
-            function( i, e )
-            {
-                e.setAttribute( 'data', i );
-            }
-        )
+        var markers = document.querySelectorAll( '.marker' );
+        for ( var i = 0; i < markers.length; i++ )
+        {
+            markers[ i ].setAttribute( 'data', i );
+        }
     };
 
     this.removeMarkers = function()
     {
-        $( '.marker' ).each(
-            function( i, e )
-            {
-                document.getElementById( 'markers' ).removeChild( e );
-            }
-        )
+        var markers = document.querySelectorAll( '.marker' );
+        for ( var i = 0; i < markers.length; i++ )
+        {
+            document.getElementById( 'markers' ).removeChild( markers[ i ] );
+        }
     };
 
     this.removeMarker = function( num )
@@ -668,8 +639,8 @@ var ParabolicLineDesigns = function( debug )
 
             // Update active point if applicable
             if ( this.endPoint != id
-                && ( id == 0 || id == this.points.length - 1 )
-                )
+                    && ( id == 0 || id == this.points.length - 1 )
+                    )
             {
                 this.endPoint = id;
             }
@@ -709,10 +680,7 @@ var ParabolicLineDesigns = function( debug )
     // Get the CanvasPixelArray from the given coordinates and dimensions.
     this.getCurrentLine = function( p )
     {
-        var imgd = this.debugContext.getImageData( p.x, p.y, 1, 1 );
-        // console.log( imgd.data );
-
-        return imgd.data[ 0 ];
+        return this.debugContext.getImageData( p.x, p.y, 1, 1 ).data[ 0 ];
     };
 
     this.isTouchingLine = function( p )
@@ -759,7 +727,7 @@ var ParabolicLineDesigns = function( debug )
     this.addPoint = function( p, pos )
     {
         // Break line in two
-        if ( typeof pos != 'undefined' )
+        if ( typeof pos !== 'undefined' )
         {
             this.points.splice( pos, 0, p );
             this.endPoint = ( this.endPoint == 0 ) ? 0 : this.points.length - 1;
@@ -983,11 +951,12 @@ var ParabolicLineDesigns = function( debug )
             }
 
 
+            var grad;
             if ( num == this.currentPoint )
             {
-                var grad = this.linesContext.createLinearGradient( pt1.x + this.origin.x, pt1.y + this.origin.y,
-                    x + this.origin.x, y + this.origin.y
-                );
+                grad = this.linesContext.createLinearGradient( pt1.x + this.origin.x, pt1.y + this.origin.y,
+                                                                x + this.origin.x, y + this.origin.y
+                                                                );
                 grad.addColorStop( 1, "white" );
                 grad.addColorStop( 0, "gold" );
                 this.linesContext.strokeStyle = grad;
@@ -996,12 +965,12 @@ var ParabolicLineDesigns = function( debug )
             else if ( this.currentPoint != null )
             {
                 if ( ( this.currentPoint == 0 && num == 1 )
-                    || ( num == this.currentPoint + 1 && this.currentPoint != 0 )
-                    )
+                        || ( num == this.currentPoint + 1 && this.currentPoint != 0 )
+                        )
                 {
-                    var grad = this.linesContext.createLinearGradient( x + this.origin.x, y + this.origin.y,
-                        pt1.x + this.origin.x, pt1.y + this.origin.y
-                    );
+                    grad = this.linesContext.createLinearGradient( x + this.origin.x, y + this.origin.y,
+                                                                    pt1.x + this.origin.x, pt1.y + this.origin.y
+                                                                    );
                     grad.addColorStop( 1, "white" );
                     grad.addColorStop( 0, "gold" );
                     this.linesContext.strokeStyle = grad;
@@ -1030,17 +999,8 @@ var ParabolicLineDesigns = function( debug )
     };
 
 
-
-
-
-
-
-
-
-
     /** CONVENIENCE **/
 
-    // Stub for analytics
     this.trackEvent = function( action, label, value, noninteraction ) {};
 };
 
