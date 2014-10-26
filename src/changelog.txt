@@ -28,14 +28,14 @@ Later:
 - Ability to save design as PNG (or SVG?)
 ??? - Update URL dynamically (best support native Share features)
 - Convert icons to webfonts
-- Tutorial: Track state to display 'new' instructions on page load, or after page is reset for the first time
 - Add simple undo (Cmd-Z / Ctrl-Z)
-- Track down bug on Android browser when splitting lines (seems to crash?)
 
 
 
 2014-10-25
 
+DONE - Track down bug on mobile Chrome where browser seems to crash when splitting lines
+DONE - Tutorial: Track state to display 'new' instructions on page load, or after page is reset for the first time
 DONE - Tutorial: Change instructions to indicate reset if page loads with coordinates in URI
 DONE - Convert code to class, move into /src
 DONE - Remove jQuery

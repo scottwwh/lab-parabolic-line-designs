@@ -43,8 +43,8 @@ canvas#gradient { background-color: #000; }
                 #overlay article nav a:hover { color: #fff; }
                 #overlay article nav a:hover span { background-color: #fff; }
 
-#dialogue { position: absolute; bottom: 15%; width: 100%; color: #fff; font-size: 2.25em; text-align: center; z-index: 252; display: none; }
-
+#dialogue { position: absolute; bottom: 10%; width: 100%; color: #fff; font-size: 2.25em; text-align: center; z-index: 252; display: none; }
+    #dialogue span { padding: 0.5em; }
 
 
 

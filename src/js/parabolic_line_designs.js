@@ -34,6 +34,10 @@ var Controls = function()
         document.getElementById( 'share' ).onclick = this.onChangeSetting.bind(this);
         document.getElementById( 'about' ).onclick = this.onChangeSetting.bind(this);
 
+        document.querySelector( 'header' ).addEventListener( 'mousedown', this.onClickReserved.bind(this) );
+        document.querySelector( 'form[name="settings"]' ).addEventListener( 'mousedown', this.onClickReserved.bind(this) );
+        document.querySelector( 'form[name="settings"]' ).addEventListener( 'touchstart', this.onClickReserved.bind(this) );
+
         // Overlay
         document.querySelector( 'a[href="#close"]' ).onclick = this.closeOverlay.bind(this);
         document.getElementById( 'overlay' ).onclick = this.closeOverlay;
@@ -85,6 +89,11 @@ var Controls = function()
         }
 
         keysActive[ e.which ] = false;
+    };
+
+    this.onClickReserved = function( e )
+    {
+        e.stopImmediatePropagation();
     };
 
     this.onChangeSetting = function( e )
@@ -193,6 +202,8 @@ var Controls = function()
 
     this.openOverlay = function( section )
     {
+        app.isOverlayOpen = true;
+
         // console.log( 'Show', section );
         var sections = document.getElementById( 'overlay' ).getElementsByTagName( 'section' );
         sections[ 0 ].style.display = 'none';
@@ -208,8 +219,17 @@ var Controls = function()
         return false;
     };
 
-    this.closeOverlay = function()
+    this.closeOverlay = function(e)
     {
+        app.isOverlayOpen = false;
+
+        // Prevent background from being clicked
+        if ( e )
+        {
+            console.log( 'stop default?' );
+            e.stopImmediatePropagation();
+        }
+
         var sections = document.getElementById( 'overlay' ).getElementsByTagName( 'section' );
         sections[ 0 ].style.display = 'none';
         sections[ 1 ].style.display = 'none';
@@ -276,6 +296,9 @@ var ParabolicLineDesigns = function( debug )
     this.endPoint = 0;
     this.currentPoint = null;
 
+    this.isTouchingCanvas = false;
+    this.isOverlayOpen = false;
+
 
 
     this.init = function()
@@ -283,40 +306,43 @@ var ParabolicLineDesigns = function( debug )
         this.controls = new Controls();
         this.controls.init();
 
-
         this.linesCanvas = document.getElementById( 'lines' );
         this.linesContext = this.linesCanvas.getContext( '2d' );
 
-
         this.debugCanvas = document.getElementById( 'debug' );
         this.debugContext = this.debugCanvas.getContext( '2d' );
-
 
         this.origin.x = this.linesCanvas.width * 0.5;
         this.origin.y = this.linesCanvas.height * 0.5;
 
 
-
-
         this.drawPointStates();
         this.drawGrid();
-
         this.initPointsInUri();
+        this.resize(); // Draw all points/markers/debug
 
-        // Draw all points/markers/debug
-        this.resize();
 
+        var label = ( this.modeActivity == strings.ACTVITY_NEW ) ? 'New' : 'Share' ;
+        this.trackEvent( 'Initialize', label, this.points.length, true );
 
 
         // Handlers
-        document.getElementById( 'stage' ).onmousedown = this.touchCanvasHandler.bind(this);
-        window.addEventListener( 'resize', this.resize.bind(this) );
+
+        window.addEventListener( 'mousedown', this.touchCanvasStartHandler.bind(this) );
+        window.addEventListener( 'touchstart', this.touchCanvasStartHandler.bind(this) );
+
+        window.addEventListener( 'mouseup', this.touchCanvasEndHandler.bind(this) );
+        window.addEventListener( 'touchend', this.touchCanvasEndHandler.bind(this) );
+
         window.addEventListener( 'mousemove', this.moveMarkerHandler.bind(this) );
         window.addEventListener( 'touchmove', this.moveMarkerHandler.bind(this) );
 
+        window.addEventListener( 'resize', this.resize.bind(this) );
+
 
         this.tutorial = new Tutorial();
-        this.tutorial.init( this.modeActivity );
+        this.tutorial.setMode( this.modeActivity );
+        this.tutorial.init();
         this.tutorial.next();
     };
 
@@ -326,7 +352,6 @@ var ParabolicLineDesigns = function( debug )
         {
             var params = {};
             var hash = document.location.hash.substr( 1 ).split( '&' );
-            // console.log( hash );
 
             for ( var i = 0; i < hash.length; i++ )
             {
@@ -334,11 +359,8 @@ var ParabolicLineDesigns = function( debug )
                 if ( kv.length == 1 )
                     continue;
 
-                // console.log( kv );
                 params[ kv[ 0 ] ] = kv[ 1 ];
             }
-            // console.log( params );
-
 
             if ( typeof( params.p ) === "undefined" )
                 return;
@@ -357,7 +379,6 @@ var ParabolicLineDesigns = function( debug )
                 this.addPoint( { x: Number( point[0] ), y: Number( point[1] ) } );
             }
 
-
             this.modeActivity = strings.ACTVITY_RETURNING;
         }
     };
@@ -369,6 +390,13 @@ var ParabolicLineDesigns = function( debug )
             this.points = [];
             this.removeMarkers();
             this.clearCanvas();
+
+            if ( ! this.tutorial.hasShownNew )
+            {
+                this.tutorial.setMode( strings.ACTVITY_NEW );
+                this.tutorial.reset();
+                this.tutorial.next();
+            }
         }
     };
     
@@ -402,16 +430,21 @@ var ParabolicLineDesigns = function( debug )
 
     /** HANDLERS **/
 
-    this.touchCanvasHandler = function( e )
+    this.touchCanvasStartHandler = function( e )
     {
-        // console.log(e);
         e.preventDefault();
+
+        if ( this.isTouchingCanvas || this.isOverlayOpen )
+            return;
+        else
+            this.isTouchingCanvas = true;
 
         if ( this.moving || this.modePen == strings.DELETE ) return;
 
         var newMarker;
-        var p = { x: e.pageX - this.origin.x, y: e.pageY - this.origin.y };
-        var pTest = { x: e.pageX, y: e.pageY };
+        var target = ( e.type == 'touchstart' ) ? e.touches[0] : e ;
+        var p = { x: target.pageX - this.origin.x, y: target.pageY - this.origin.y };
+        var pTest = { x: target.pageX, y: target.pageY };
         var line;
 
         if ( this.isTouchingLine( pTest ) )
@@ -425,17 +458,25 @@ var ParabolicLineDesigns = function( debug )
         this.clearCanvas();
         this.drawAllPoints();
 
+        this.tutorial.next();
+        this.trackEvent( 'Point', 'Add', this.points.length );
+
         // Start drag if possible
         this.touchMarker( newMarker );
+    };
 
-        // console.log( this, this.tutorial );
-        this.tutorial.next();
+    this.touchCanvasEndHandler = function(e)
+    {
+        // console.log(e.type);
+        this.isTouchingCanvas = false;
+        this.moving = false; // Fix touchscreen prob with adding new points
     };
 
     this.touchStartHandler = function( e )
     {
         e.preventDefault();
 
+        this.tutorial.next();
         this.touchMarker( e.currentTarget );
     };
 
@@ -464,71 +505,15 @@ var ParabolicLineDesigns = function( debug )
 
         if ( this.points.length > 1 )
         {
-            if ( this.isTouchingLine( p ) && this.modePen == strings.DRAW )
+            if ( this.isTouchingLine( p )
+                    && this.modePen == strings.DRAW
+                    )
             {
                 document.body.style.cursor = "pointer";
             }
             else
             {
                 document.body.style.cursor = "default";
-            }
-        }
-        // Zany trig solving
-        else if ( this.points.length > 1 )
-        {
-            this.debugContext.clearRect( 0, 0, this.debugCanvas.width, this.debugCanvas.height );
-
-            for ( var i = 0; i < this.points.length - 1; i++ )
-            {
-                var x1 = this.points[ i ].x + this.origin.x;
-                var x2 = this.points[ i + 1 ].x + this.origin.x;
-
-                var y1 = this.points[ i ].y + this.origin.y;
-                var y2 = this.points[ i + 1 ].y + this.origin.y;
-
-                var inBoundsX = false;
-                var inBoundsY = false;
-
-                if ( x1 < x2 )
-                {
-                    if ( p.x > x1 && p.x < x2 ) inBoundsX = true;
-                }
-                else
-                {
-                    if ( p.x < x1 && p.x > x2 ) inBoundsX = true;
-                }
-
-                if ( y1 < y2 )
-                {
-                    if ( p.y > y1 && p.y < y2 ) inBoundsY = true;
-                }
-                else
-                {
-                    if ( p.y < y1 && p.y > y2 ) inBoundsY = true;
-                }
-
-
-                if ( inBoundsX && inBoundsY )
-                {
-                    console.log( 'oui!' );
-                    this.debugContext.beginPath();
-                    this.debugContext.fillStyle = 'rgba( 0, 255, 0, 0.2 )';
-                    this.debugContext.rect( x1, y1, x2 - x1, y2 - y1 );
-                    this.debugContext.fill();
-                    this.debugContext.closePath();
-
-                    this.debugContext.beginPath();
-                    this.debugContext.fillStyle = 'none';
-                    this.debugContext.strokeStyle = '#fff';
-
-                    this.debugContext.moveTo( x1, y1 );
-                    this.debugContext.lineTo( p.x, p.y );
-                    this.debugContext.lineTo( x2, y2 );
-                    this.debugContext.lineTo( x1, y1 );
-                    this.debugContext.stroke();
-
-                    this.debugContext.closePath();
-                }
             }
         }
     };
@@ -813,11 +798,11 @@ var ParabolicLineDesigns = function( debug )
         }
     };
 
-    this.drawCircle = function( context, style, x, y, radius, stroked )
+    this.drawCircle = function( context, style, x, y, radius, stroke )
     {
-        stroked = stroked || false;
+        stroke = stroke || false;
 
-        if ( stroked )
+        if ( stroke )
         {
             context.beginPath();
             context.strokeStyle = style;
@@ -1028,12 +1013,11 @@ var Tutorial = function()
 {
     var pos = 0;
     var instructions = { 'new': [], 'share': [] };
+    this.hasShownNew = false;
     this.mode = 'new';
 
-    this.init = function( mode )
+    this.init = function()
     {
-        this.mode = ( mode == strings.ACTVITY_NEW ) ? 'new' : 'share' ;
-
         // Store all instructions by type
         var elements = document.querySelectorAll( '#dialogue ul' );
         for ( var i = 0; i < elements.length; i++ )
@@ -1047,16 +1031,34 @@ var Tutorial = function()
             }
         }
 
-        document.getElementById( 'dialogue' ).innerHTML = '';
+        document.getElementById( 'dialogue' ).innerHTML = '<span></span>';
         document.getElementById( 'dialogue' ).style.display = 'block';
+    };
+
+    this.setMode = function( mode )
+    {
+        this.mode = ( mode == strings.ACTVITY_NEW ) ? 'new' : 'share' ;
+
+        if ( mode == strings.ACTVITY_NEW )
+            this.hasShownNew = true;
     };
 
     this.next = function()
     {
-        if ( pos < instructions[ this.mode ].length + 1 )
+        if ( pos < instructions[ this.mode ].length )
         {
-            document.querySelector( '#dialogue' ).innerHTML = ( pos < instructions[ this.mode ].length ) ? instructions[ this.mode ][ pos ] : '' ;
+            if ( pos == 0 )
+                document.querySelector( '#dialogue' ).className= '';
+
+            document.querySelector( '#dialogue span' ).innerHTML = instructions[ this.mode ][ pos ];
+            document.querySelector( '#dialogue span' ).className= 'box-shadow';
             pos++;
+
+            app.trackEvent( 'Tutorial', 'Update (' + this.mode + ')', pos );
+        }
+        else
+        {
+            document.querySelector( '#dialogue' ).className= 'hidden';
         }
     };
 
@@ -1089,8 +1091,10 @@ init();
 function init()
 {
     /*
-     initialize (new)
-     initialize (share)
+    Initialize / New
+    Initialize / Share
+
+    Tutorial / Update / [screen #]
 
      reset
      toggle - settings - on/off
@@ -1116,14 +1120,10 @@ function init()
     app = new ParabolicLineDesigns( true );
     app.trackEvent = function( action, label, value, noninteraction )
     {
-        // alert( 'Track event: ' + action );
         if ( trackEvent )
-            trackEvent( 'Parabolic', action, label, value, noninteraction );
+            trackEvent( 'PLD', action, label, value, noninteraction );
     };
     app.init();
-
-    var activity = ( app.modeActivity == strings.ACTVITY_NEW ) ? 'New' : 'Share' ;
-    app.trackEvent( 'Initialize', activity, null, true );
 }
 
 
@@ -1152,14 +1152,12 @@ function init()
 
 function trackEvent( category, action, label, value, noninteraction )
 {
-    label = label || undefined;
-    value = ( typeof value == 'number' && value >= 0 ) ? value : undefined ;
+    label = label || undefined;    value = ( typeof value == 'number' && value >= 0 ) ? value : undefined ;
     noninteraction = ( noninteraction === true ) || false;
 
     console.log( 'Track event: ' + category, action, label, value, noninteraction );
     if ( typeof _gaq !== 'undefined' )
     {
-        // _gaq.push([ '_trackEvent', category, action, label, value, noninteraction ]);
+        _gaq.push([ '_trackEvent', category, action, label, value, noninteraction ]);
     }
 }
-

@@ -11,11 +11,17 @@
 
             a { color: #5e98ff; }
 
-            header section { display: inline-block; border-radius: 0 0 0.5em 0.5em;
-                                background-color: rgba( 0, 0, 0, 0.75 ); box-shadow: 0 0 1em 0.5em rgba( 0, 0, 0, 0.75 ); }
             header p { margin: 0.25em; padding: 0; }
 
             canvas { position: absolute; top: 0; left: 0; background-color: #000; display: inline-block; z-index: -1; }
+
+            #dialogue { transition: all 2s; }
+
+            .box-shadow { display: inline-block; border-radius: 0 0 0.5em 0.5em;
+                            background-color: rgba( 0, 0, 0, 0.75 ); box-shadow: 0 0 1em 0.5em rgba( 0, 0, 0, 0.75 );
+                            }
+            .hidden { opacity: 0; }
+
 
         </style>
 
@@ -23,9 +29,9 @@
     <body>
 
         <header>
-            <section>
+            <section class="box-shadow">
                 <h1>Parabolic line designs</h1>
-                <p>An HTML5 tool to easily draw and share parabolic line designs. <a href="https://github.com/scottwwh/lab-parabolic-line-designs">Source on GitHub</a>.</p>
+                <p>A drawing tool to easily make and share parabolic line designs. <a href="https://github.com/scottwwh/lab-parabolic-line-designs">Source on GitHub</a>.</p>
             </section>
         </header>
 
@@ -97,10 +103,6 @@
             </ul>
         </div>
 
-        <!--
-        <script src="js/vendor/modernizr-2.6.2.min.js"></script>
-        <script src="js/vendor/jquery-1.9.0.min.js"></script>
-        -->
         <script type="text/javascript" src="js/parabolic_line_designs.js"></script>
 
     </body>
