@@ -4,7 +4,7 @@
         <title>Parabolic line designs</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" type="text/css" media="screen" href="css/parabolic_line_design.css" />
+        <link type="text/css" rel="stylesheet" media="screen" href="css/parabolic_line_design.css" />
         <style type="text/css" media="screen">
 
             body { background-color: #000; color: #999; margin: 0; padding: 0; font-family: Arial, sans-serif; text-align: center; }
@@ -20,8 +20,8 @@
             .box-shadow { display: inline-block; border-radius: 0 0 0.5em 0.5em;
                             background-color: rgba( 0, 0, 0, 0.75 ); box-shadow: 0 0 1em 0.5em rgba( 0, 0, 0, 0.75 );
                             }
-            .hidden { opacity: 0; }
 
+            .hidden { opacity: 0; }
 
         </style>
 
@@ -31,7 +31,7 @@
         <header>
             <section class="box-shadow">
                 <h1>Parabolic line designs</h1>
-                <p>A drawing tool to easily make and share parabolic line designs. <a href="https://github.com/scottwwh/lab-parabolic-line-designs">Source on GitHub</a>.</p>
+                <p><a href="https://github.com/scottwwh/lab-parabolic-line-designs">Source on GitHub</a></p>
             </section>
         </header>
 
@@ -104,6 +104,17 @@
         </div>
 
         <script type="text/javascript" src="js/parabolic_line_designs.js"></script>
+        <script type="text/javascript">
+
+            app = new ParabolicLineDesigns( true );
+            app.trackEvent = function( action, label, value, noninteraction )
+            {
+                if ( typeof trackEvent !== 'undefined' )
+                    trackEvent( 'PLD', action, label, value, noninteraction );
+            };
+            app.init();
+
+        </script>
 
     </body>
 </html>

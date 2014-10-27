@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo: Trig</title>
+
+    <style type="text/css">
+
+        canvas { float: left; background-color: #ddd; }
+        textarea { float: left; margin-left: 1em; }
+
+    </style>
+
+</head>
+<body>
+
+<canvas width="800" height="500"></canvas>
+
+<script type="text/javascript">
+
+    var canvas = document.getElementsByTagName( 'canvas' )[0];
+    var context = canvas.getContext( '2d' );
+    var w = canvas.width;
+    var h = canvas.height;
+    var d = 10;
+    var points = [];
+
+    var buffer = document.createElement( 'canvas' );
+    buffer.width = canvas.width;
+    buffer.height = canvas.height;
+
+    var Point = function( x, y )
+    {
+        this.x = x;
+        this.y = y;
+    };
+
+    function init()
+    {
+        var p;
+        var x;
+        var y;
+        for ( var i = 0; i < 10; i ++ )
+        {
+            x = Math.random() * ( w - d * 2 ) + d ;
+            y = Math.random() * ( h - d * 2 ) + d ;
+            points.push( new Point( x, y ) );
+
+            context.fillStyle = '#bbbbbb';
+            context.beginPath();
+            context.arc( x, y, d * 0.5, 0, Math.PI * 2 );
+            context.fill();
+            context.closePath();
+
+            if ( i > 0 )
+            {
+                p = points[ i - 1 ];
+                context.strokeStyle = '#bbbbbb';
+                context.lineWidth = 3;
+                context.beginPath();
+                context.moveTo( p.x, p.y );
+                context.lineTo( x, y );
+                context.stroke();
+                context.closePath();
+            }
+        }
+
+        buffer.getContext('2d').drawImage( canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height );
+        canvas.onmousemove = func;
+    }
+
+    function func(e)
+    {
+        var r = d * 0.5;
+        var p = { x: e.pageX - r, y: e.pageY - r };
+
+        this.origin = new Point( 0, 0 );
+        
+        context.clearRect( 0, 0, canvas.width, canvas.height );
+        context.drawImage( buffer, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height );
+
+
+        context.fillStyle = '#009900';
+        context.beginPath();
+        context.arc( p.x, p.y, d * 0.5, 0, Math.PI * 2 );
+        context.fill();
+        context.closePath();
+
+
+        for ( var i = 0; i < points.length - 1; i++ )
+        {
+            var x1 = points[ i ].x + this.origin.x;
+            var x2 = points[ i + 1 ].x + this.origin.x;
+
+            var y1 = points[ i ].y + this.origin.y;
+            var y2 = points[ i + 1 ].y + this.origin.y;
+
+            var inBoundsX = false;
+            var inBoundsY = false;
+
+            if ( x1 < x2 )
+            {
+                if ( p.x > x1 && p.x < x2 ) inBoundsX = true;
+            }
+            else
+            {
+                if ( p.x < x1 && p.x > x2 ) inBoundsX = true;
+            }
+
+            if ( y1 < y2 )
+            {
+                if ( p.y > y1 && p.y < y2 ) inBoundsY = true;
+            }
+            else
+            {
+                if ( p.y < y1 && p.y > y2 ) inBoundsY = true;
+            }
+
+
+            if ( inBoundsX && inBoundsY )
+            {
+                context.beginPath();
+                context.fillStyle = 'rgba( 0, 255, 0, 0.2 )';
+                context.rect( x1, y1, x2 - x1, y2 - y1 );
+                context.fill();
+                context.closePath();
+
+                context.beginPath();
+                context.fillStyle = 'none';
+                context.strokeStyle = '#009999';
+                context.lineWidth = 1;
+
+                context.moveTo( x1, y1 );
+                context.lineTo( p.x, p.y );
+                context.lineTo( x2, y2 );
+                context.lineTo( x1, y1 );
+                context.stroke();
+
+                context.closePath();
+            }
+        }
+    }
+
+    init();
+
+</script>
+
+</body>
+</html>

@@ -1,17 +1,29 @@
 
+GA actions
 
+    Initialize / New
+    Initialize / Share
+    Tutorial / Update / [screen #]
+    Point / Add / [# points]
 
-// GA actions
+	--
 
-Reset (num points)
-Control:
-    Draw
-    Delete
-    Grid (1,0)
-    Mode (1,0)
-Overlay | Share
-Overlay | About
-Load pattern (num points)
+    reset
+    toggle - settings - on/off
+    toggle - grid - on/off
+    toggle - snap - on/off
+    tool - pen_add
+    tool - pen_delete
+
+    pen tool - add
+    pen tool - delete
+
+    point - add
+    point - split
+    point - delete
+
+    share - open/close ??
+    info - open/close ??
 
 
 

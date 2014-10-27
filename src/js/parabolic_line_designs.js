@@ -1,13 +1,22 @@
-/**
- * Created with JetBrains PhpStorm.
- * User: Scott
- * Date: 5/31/13
- * Time: 6:54 PM
- * To change this template use File | Settings | File Templates.
- */
 
 /**
- * PLD controls
+ * @author scottwwh / http://syncretinal.com
+ */
+
+
+// Keep around for impl until classes use app context
+var app;
+
+var strings = {};
+strings.RESET               = "Clear all points and start over?";
+strings.DRAW                = "draw";
+strings.DELETE              = "delete";
+strings.ACTVITY_NEW         = 'activityNew';
+strings.ACTVITY_RETURNING   = 'activityReturning';
+
+
+/**
+ * Parabolic Line Designs controls
  */
 
 var Controls = function()
@@ -238,20 +247,6 @@ var Controls = function()
         return false;
     };
 };
-
-
-
-
-
-var strings = {};
-strings.RESET               = "Clear all points and start over?";
-strings.DRAW                = "draw";
-strings.DELETE              = "delete";
-strings.ACTVITY_NEW         = 'activityNew';
-strings.ACTVITY_RETURNING   = 'activityReturning';
-
-
-
 
 
 /**
@@ -990,23 +985,8 @@ var ParabolicLineDesigns = function( debug )
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
- * Tutorial
+ * Parabolic Line Designs tutorial
  */
 
 var Tutorial = function()
@@ -1067,97 +1047,3 @@ var Tutorial = function()
         pos = 0;
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Implementation + init - move this to containing page?
- */
-
-var app;
-
-init();
-
-function init()
-{
-    /*
-    Initialize / New
-    Initialize / Share
-
-    Tutorial / Update / [screen #]
-
-     reset
-     toggle - settings - on/off
-     toggle - grid - on/off
-     toggle - snap - on/off
-     tool - pen_add
-     tool - pen_delete
-
-
-     pen tool - add
-     pen tool - delete
-
-
-     add point
-     split line
-     remove point
-
-
-     share - open/close ??
-     info - open/close ??
-     */
-
-    app = new ParabolicLineDesigns( true );
-    app.trackEvent = function( action, label, value, noninteraction )
-    {
-        if ( trackEvent )
-            trackEvent( 'PLD', action, label, value, noninteraction );
-    };
-    app.init();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-////// GLOBAL STUFF //////
-
-/**
- * Move to global
- * @param category
- * @param action
- * @param label
- * @param value
- * @param noninteraction
- */
-
-function trackEvent( category, action, label, value, noninteraction )
-{
-    label = label || undefined;    value = ( typeof value == 'number' && value >= 0 ) ? value : undefined ;
-    noninteraction = ( noninteraction === true ) || false;
-
-    console.log( 'Track event: ' + category, action, label, value, noninteraction );
-    if ( typeof _gaq !== 'undefined' )
-    {
-        _gaq.push([ '_trackEvent', category, action, label, value, noninteraction ]);
-    }
-}
